@@ -7,12 +7,16 @@ qtHaveModule(printsupport): QT += printsupport
 requires(qtConfig(fontdialog))
 
 SOURCES += \
-    main.cpp\
-    notepad.cpp
+    main.cpp \
+    qurannotepad.cpp \
+    tewafuqeditor.cpp
 
-HEADERS += notepad.h
+HEADERS += \
+    qurannotepad.h \
+    tewafuqeditor.h
 
-FORMS += notepad.ui
+FORMS += \
+    qurannotepad.ui
 
 RESOURCES += \
     notepad.qrc

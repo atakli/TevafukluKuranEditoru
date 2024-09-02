@@ -1,52 +1,31 @@
-#include <QFile>
+#include <QFontDatabase>
 #include <QFileDialog>
 #include <QTextStream>
 #include <QMessageBox>
-#if defined(QT_PRINTSUPPORT_LIB)
-#include <QtPrintSupport/qtprintsupportglobal.h>
-#if QT_CONFIG(printer)
-#if QT_CONFIG(printdialog)
-#include <QPrintDialog>
-#endif // QT_CONFIG(printdialog)
-#include <QPrinter>
-#endif // QT_CONFIG(printer)
-#endif // QT_PRINTSUPPORT_LIB
-#include <QFont>
-#include <QFontDatabase>
 #include <QFontDialog>
+#include <QFile>
+#include <QFont>
 #include <QSize>
 
-#include "notepad.h"
-#include "ui_notepad.h"
+#include "qurannotepad.h"
+#include "ui_qurannotepad.h"
 
-Notepad::Notepad(QWidget *parent) :
+QuranNotepad::QuranNotepad(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::Notepad)
 {
     ui->setupUi(this);
 
-    connect(ui->actionNew, &QAction::triggered, this, &Notepad::newDocument);
-    connect(ui->actionOpen, &QAction::triggered, this, &Notepad::open);
-    connect(ui->actionSave, &QAction::triggered, this, &Notepad::save);
-    connect(ui->actionSave_as, &QAction::triggered, this, &Notepad::saveAs);
-    connect(ui->actionPrint, &QAction::triggered, this, &Notepad::print);
-    connect(ui->actionExit, &QAction::triggered, this, &QWidget::close);
-#if QT_CONFIG(clipboard)
-    connect(ui->textEdit, &QTextEdit::copyAvailable, ui->actionCopy, &QAction::setEnabled);
-    connect(ui->actionCopy, &QAction::triggered, ui->textEdit, &QTextEdit::copy);
-    connect(ui->actionCut, &QAction::triggered, ui->textEdit, &QTextEdit::cut);
-    connect(ui->actionPaste, &QAction::triggered, ui->textEdit, &QTextEdit::paste);
-#endif
-    connect(ui->textEdit, &QTextEdit::undoAvailable, ui->actionUndo, &QAction::setEnabled);
-    connect(ui->actionUndo, &QAction::triggered, ui->textEdit, &QTextEdit::undo);
-    connect(ui->textEdit, &QTextEdit::redoAvailable, ui->actionRedo, &QAction::setEnabled);
-    connect(ui->actionRedo, &QAction::triggered, ui->textEdit, &QTextEdit::redo);
+    connect(ui->actionNew, &QAction::triggered, this, &QuranNotepad::newDocument);
+    connect(ui->actionOpen, &QAction::triggered, this, &QuranNotepad::open);
+    connect(ui->actionSave, &QAction::triggered, this, &QuranNotepad::save);
+    connect(ui->actionSave_as, &QAction::triggered, this, &QuranNotepad::saveAs);
 
-    connect(ui->actionFont, &QAction::triggered, this, &Notepad::selectFont);
-    connect(ui->actionBold, &QAction::triggered, this, &Notepad::setFontBold);
-    connect(ui->actionUnderline, &QAction::triggered, this, &Notepad::setFontUnderline);
-    connect(ui->actionItalic, &QAction::triggered, this, &Notepad::setFontItalic);
-    connect(ui->actionAbout, &QAction::triggered, this, &Notepad::about);
+    connect(ui->actionFont, &QAction::triggered, this, &QuranNotepad::selectFont);
+    connect(ui->actionUnderline, &QAction::triggered, this, &QuranNotepad::setFontUnderline);
+    connect(ui->actionAbout, &QAction::triggered, this, &QuranNotepad::about);
+
+    connect(ui->gotopage_spinBox, &QSpinBox::valueChanged, this, &QuranNotepad::on_gotopage_spinBox_editingFinished);
 
     quran.setFileName("quran/quran-simple-clean-besmelesiz.txt");
     if (!quran.open(QFileDevice::ReadOnly))
@@ -80,25 +59,14 @@ Notepad::Notepad(QWidget *parent) :
 
     ui->textEdit->setFont(current_font);
     setLineNumber(15);                                   // TODO: config dosyasindan al veya user-defined bir deger yap
-
-// Disable menu actions for unavailable features
-#if !defined(QT_PRINTSUPPORT_LIB) || !QT_CONFIG(printer)
-    ui->actionPrint->setEnabled(false);
-#endif
-
-#if !QT_CONFIG(clipboard)
-    ui->actionCut->setEnabled(false);
-    ui->actionCopy->setEnabled(false);
-    ui->actionPaste->setEnabled(false);
-#endif
 }
 
-Notepad::~Notepad()
+QuranNotepad::~QuranNotepad()
 {
     delete ui;
 }
 
-void Notepad::setLineNumber(int number)
+void QuranNotepad::setLineNumber(int number)
 {
     ui->listWidget->clear();
     for (int i = 1; i <= number; ++i)
@@ -109,7 +77,7 @@ void Notepad::setLineNumber(int number)
     // ui->listWidget->setFixedWidth(25);                  // TODO: generic biseyle degistir. edit: evet generic biseyle degistir ama simdilik burdan alip ui'a koydum.
 }
 
-void Notepad::set_ayas(const QString& sura, int next_sura, int aya, int next_aya)
+void QuranNotepad::set_ayas(const QString& sura, int next_sura, int aya, int next_aya)
 {
     QFile suraFile("quran/suras/" + sura + ".txt");
     if (!suraFile.open(QFileDevice::ReadOnly))
@@ -148,10 +116,10 @@ void Notepad::set_ayas(const QString& sura, int next_sura, int aya, int next_aya
     expandTextToLines(15);
     // justifyText();
 
-    QTextDocument *doc = ui->textEdit->document();
-    qDebug() << "lnes:" << doc->blockCount();
+    // QTextDocument *doc = ui->textEdit->document();
+    // qDebug() << "lines:" << doc->blockCount();
 }
-void Notepad::justifyText()
+void QuranNotepad::justifyText()
 {
     // ui->textEdit->setCurrentCharFormat(Qt::RichText);
 
@@ -165,7 +133,7 @@ void Notepad::justifyText()
     QString justifiedText = "<div align='justify'>" + currentText.toHtmlEscaped().replace("\n", "<br>") + "</div>";
     ui->textEdit->setHtml(justifiedText);
 }
-void Notepad::expandTextToLines(int targetLines)
+void QuranNotepad::expandTextToLines(int targetLines)
 {
     QTextDocument *doc = ui->textEdit->document();
     QString text = doc->toPlainText();
@@ -175,7 +143,7 @@ void Notepad::expandTextToLines(int targetLines)
 
     int currentLines = doc->blockCount();
     if (currentLines >= targetLines) {
-        return;  // No need to expand if the text already has enough lines
+        return;  // No need to expand if the text already has enough lines. edit: bu durum hic olusmaz sanirim o yuzden kaldiralim
     }
 
     // Calculate the number of words per line
@@ -197,7 +165,18 @@ void Notepad::expandTextToLines(int targetLines)
     // Join the expanded lines back together with line breaks
     ui->textEdit->setPlainText(expandedLines.join('\n'));
 }
-void Notepad::openPage(int page)    // simdilik fatiha ile bakaranin ilk sayfasini ayni sayfada gibi gostericem
+
+bool QuranNotepad::applySavedArrangement(int page)
+{
+    assert(1 <= page && page <= 604);
+    return false;
+}
+
+bool QuranNotepad::controlCurrentPageNumber()
+{
+    return (1 <= current_page && current_page <= 604);
+}
+void QuranNotepad::openPage(int page)    // simdilik fatiha ile bakaranin ilk sayfasini ayni sayfada gibi gostericem
 {
     const QStringList sura_and_aya = pages_lines[page - 1].split(" ");   // if the page is 1, the index should be 0.
     const QStringList next_sura_and_aya = pages_lines[page].split(" ");
@@ -206,16 +185,17 @@ void Notepad::openPage(int page)    // simdilik fatiha ile bakaranin ilk sayfasi
     const int next_sura = next_sura_and_aya[0].toInt(); // 2
     const int next_aya = next_sura_and_aya[1].toInt();  // 25
 
-    set_ayas(sura, next_aya, aya, next_aya);
+    if (!applySavedArrangement(page))
+        set_ayas(sura, next_aya, aya, next_aya);
 }
 
-void Notepad::newDocument()
+void QuranNotepad::newDocument()
 {
     currentFile.clear();
     ui->textEdit->setText(QString());
 }
 
-void Notepad::open()
+void QuranNotepad::open()
 {
     QString fileName = QFileDialog::getOpenFileName(this, "Open the file");
     if (fileName.isEmpty())
@@ -233,7 +213,7 @@ void Notepad::open()
     file.close();
 }
 
-void Notepad::save()
+void QuranNotepad::save()
 {
     QString fileName;
     // If we don't have a filename from before, get one.
@@ -257,7 +237,7 @@ void Notepad::save()
     file.close();
 }
 
-void Notepad::saveAs()
+void QuranNotepad::saveAs()
 {
     QString fileName = QFileDialog::getSaveFileName(this, "Save as");
     if (fileName.isEmpty())
@@ -276,20 +256,7 @@ void Notepad::saveAs()
     file.close();
 }
 
-void Notepad::print()
-{
-#if defined(QT_PRINTSUPPORT_LIB) && QT_CONFIG(printer)
-    QPrinter printDev;
-#if QT_CONFIG(printdialog)
-    QPrintDialog dialog(&printDev, this);
-    if (dialog.exec() == QDialog::Rejected)
-        return;
-#endif // QT_CONFIG(printdialog)
-    ui->textEdit->print(&printDev);
-#endif // QT_CONFIG(printer)
-}
-
-void Notepad::selectFont()
+void QuranNotepad::selectFont()
 {
     bool fontSelected;
     current_font = QFontDialog::getFont(&fontSelected, current_font, this);
@@ -300,37 +267,24 @@ void Notepad::selectFont()
     }
 }
 
-void Notepad::setFontUnderline(bool underline)
+void QuranNotepad::setFontUnderline(bool underline)
 {
     ui->textEdit->setFontUnderline(underline);
 }
 
-void Notepad::setFontItalic(bool italic)
+void QuranNotepad::about()
 {
-    ui->textEdit->setFontItalic(italic);
+    QMessageBox::about(this, tr("Kuran Tevafuk Editörü Hakkında"), tr("Tevafuklu Kuran'ın Levh-i Mahfuz'da yazıldığı şeklini keşfetmek için kullandığımız editör"));
 }
 
-void Notepad::setFontBold(bool bold)
-{
-    bold ? ui->textEdit->setFontWeight(QFont::Bold) :
-           ui->textEdit->setFontWeight(QFont::Normal);
-}
-
-void Notepad::about()
-{
-    QMessageBox::about(this, tr("About Notepad"),
-                       tr("The <b>Notepad</b> example demonstrates how to code a basic "
-                          "text editor using QtWidgets"));
-}
-
-void Notepad::on_gotopage_button_clicked()
+void QuranNotepad::on_gotopage_button_clicked()
 {
     current_page = ui->gotopage_spinBox->text().toInt();
     openPage(current_page);
 }
 
 
-void Notepad::on_nextPage_clicked()
+void QuranNotepad::on_nextPage_clicked()
 {
     if (current_page == 604)
     {
@@ -340,7 +294,7 @@ void Notepad::on_nextPage_clicked()
 }
 
 
-void Notepad::on_prevPage_clicked()
+void QuranNotepad::on_prevPage_clicked()
 {
     if (current_page == 1)
     {
@@ -350,9 +304,16 @@ void Notepad::on_prevPage_clicked()
 }
 
 
-void Notepad::on_gotopage_spinBox_editingFinished()
+void QuranNotepad::on_gotopage_spinBox_editingFinished()
 {
     current_page = ui->gotopage_spinBox->value();
-    openPage(current_page);
+    qDebug() << "current_page girilen:" << current_page;
+    if (controlCurrentPageNumber())
+        openPage(current_page);
+    else
+        ui->gotopage_spinBox->setValue(previous_page);
+    qDebug() << "current_page girilen yeni:" << current_page;
+    qDebug() << "-------";
 }
+
 
